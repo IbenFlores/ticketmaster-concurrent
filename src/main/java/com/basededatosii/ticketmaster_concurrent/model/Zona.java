@@ -2,6 +2,9 @@ package com.basededatosii.ticketmaster_concurrent.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,6 +21,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "zonas")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Zona {
 
     @Id
@@ -35,6 +39,7 @@ public class Zona {
     @Column(nullable = false)
     private Integer capacidad;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "zona", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Asiento> asientos;
 }

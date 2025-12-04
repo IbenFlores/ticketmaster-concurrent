@@ -1,5 +1,7 @@
 package com.basededatosii.ticketmaster_concurrent.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,6 +17,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "asientos")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Asiento {
 
     @Id
@@ -33,8 +36,16 @@ public class Asiento {
     private String numeroAsiento;
 
     @Column(nullable = false, length = 20)
-    private String estado;
+    private String estado; 
 
     @Version
     private Integer version;
+
+    public String getEstado() {
+        return this.estado;
+    }
+    
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
 }

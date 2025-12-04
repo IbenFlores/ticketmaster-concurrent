@@ -61,48 +61,56 @@ public class CompraServiceImpl implements CompraService {
         Compra compra = new Compra();
         compra.setUsuario(usuario);
         
-        // Asignamos el evento basándonos en el primer item (asumiendo compra simple)
+        // Asignamos el evento basándonos en el primer item
         Evento evento = itemsCarrito.get(0).getAsiento().getZona().getEvento();
         compra.setEvento(evento);
 
         BigDecimal total = BigDecimal.ZERO;
         List<Entrada> entradasParaGuardar = new ArrayList<>();
+        
+        StringBuilder detalleAsientos = new StringBuilder();
 
         // 4. Procesar items
         for (Carrito item : itemsCarrito) {
             Asiento asiento = item.getAsiento();
 
-            // Verificamos que el asiento siga reservado por seguridad
-            // OJO: Al usar Isolation.SERIALIZABLE, esto es muy seguro.
             if (!"RESERVADO".equals(asiento.getEstado())) {
                 throw new RuntimeException("Error: El asiento " + asiento.getNumeroAsiento() + " no está reservado correctamente.");
             }
 
-            // Crear Entrada
             Entrada entrada = new Entrada();
             entrada.setCompra(compra);
             entrada.setAsiento(asiento);
-            entrada.setPrecio(item.getPrecio()); // Usamos el precio que se guardó en el carrito
+            entrada.setPrecio(item.getPrecio());
             
             entradasParaGuardar.add(entrada);
 
             total = total.add(item.getPrecio());
 
-            // Marcar asiento como VENDIDO
             asiento.setEstado("VENDIDO");
             asientoRepository.save(asiento);
+
+            detalleAsientos.append("[").append(asiento.getFila())
+                           .append("-").append(asiento.getNumeroAsiento()).append("] ");
         }
 
         compra.setMontoTotal(total);
         compra.setEntradas(entradasParaGuardar);
 
-        // 5. Guardar Compra (Cascade guarda las Entradas)
+        // 5. Guardar Compra
         Compra compraGuardada = compraRepository.save(compra);
 
         // 6. Limpiar Carrito
         carritoRepository.deleteAll(itemsCarrito);
 
-        logService.registrarLog("COMPRA_EXITOSA", usuarioId, null, compraGuardada.getCompraId(), "Monto: " + compraGuardada.getMontoTotal());
+        logService.registrarLog(
+            "COMPRA_EXITOSA", 
+            usuarioId, 
+            null,
+            compraGuardada.getCompraId(), 
+            "Monto: " + compraGuardada.getMontoTotal() + ". Asientos: " + detalleAsientos.toString()
+        );
+        
         return compraGuardada;
     }
 }
