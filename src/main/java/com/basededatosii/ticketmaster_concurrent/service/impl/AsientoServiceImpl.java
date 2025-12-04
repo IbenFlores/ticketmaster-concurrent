@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.basededatosii.ticketmaster_concurrent.model.Asiento;
+import com.basededatosii.ticketmaster_concurrent.model.AsientoDisponibleView;
 import com.basededatosii.ticketmaster_concurrent.model.Zona;
 import com.basededatosii.ticketmaster_concurrent.repository.AsientoRepository;
 import com.basededatosii.ticketmaster_concurrent.repository.ZonaRepository;
@@ -50,5 +51,10 @@ public class AsientoServiceImpl implements AsientoService {
     @Transactional(readOnly = true)
     public List<Asiento> obtenerAsientosPorZona(Long zonaId) {
         return asientoRepository.findByZona_ZonaId(zonaId);
+    }
+
+    @Override
+    public List<AsientoDisponibleView> obtenerAsientosDisponibles() {
+        return asientoRepository.findAsientosDisponibles();
     }
 }

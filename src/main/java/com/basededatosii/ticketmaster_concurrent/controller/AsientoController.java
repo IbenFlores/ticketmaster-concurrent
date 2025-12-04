@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.basededatosii.ticketmaster_concurrent.model.Asiento;
+import com.basededatosii.ticketmaster_concurrent.model.AsientoDisponibleView;
 import com.basededatosii.ticketmaster_concurrent.service.AsientoService;
 
 @RestController
@@ -40,5 +41,11 @@ public class AsientoController {
     @GetMapping("/zona/{zonaId}")
     public ResponseEntity<List<Asiento>> listarAsientosPorZona(@PathVariable Long zonaId) {
         return ResponseEntity.ok(asientoService.obtenerAsientosPorZona(zonaId));
+    }
+
+     @GetMapping("/disponibles")
+    public ResponseEntity<List<AsientoDisponibleView>> listarDisponibles() {
+        List<AsientoDisponibleView> asientos = asientoService.obtenerAsientosDisponibles();
+        return ResponseEntity.ok(asientos);
     }
 }
