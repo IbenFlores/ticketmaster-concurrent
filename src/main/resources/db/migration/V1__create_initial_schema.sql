@@ -16,12 +16,12 @@ CREATE TABLE eventos (
     estado VARCHAR(20) DEFAULT 'ACTIVO'
 );
 
--- 3. ZONAS
+-- 3. ZONAS (Sin precio)
 CREATE TABLE zonas (
     zona_id BIGSERIAL PRIMARY KEY,
     evento_id BIGINT NOT NULL REFERENCES eventos(evento_id) ON DELETE CASCADE,
     nombre VARCHAR(100) NOT NULL,
-    capacidad INT NOT NULL
+    capacidad INT NOT NULL 
 );
 
 -- 4. ASIENTOS
@@ -31,7 +31,7 @@ CREATE TABLE asientos (
     fila VARCHAR(10),
     numero_asiento VARCHAR(10),
     estado VARCHAR(20) NOT NULL DEFAULT 'DISPONIBLE',
-    version INT DEFAULT 0
+    version INT DEFAULT 0 
 );
 
 -- 5. CARRITOS
@@ -75,20 +75,18 @@ CREATE TABLE logs_transacciones (
     fecha_creacion TIMESTAMP DEFAULT NOW()
 );
 
--- ==========================================
 -- ÍNDICES
--- ==========================================
 CREATE INDEX idx_eventos_fecha_evento ON eventos (fecha_evento);
-CREATE INDEX idx_eventos_nombre ON eventos (nombre);
-CREATE INDEX idx_zonas_evento_id ON zonas (evento_id);
-CREATE INDEX idx_asientos_zona_id ON asientos (zona_id);
-CREATE INDEX idx_asientos_estado ON asientos (estado);
+CREATE INDEX idx_eventos_nombre ON eventos (nombre); 
+CREATE INDEX idx_zonas_evento_id ON zonas (evento_id); 
+CREATE INDEX idx_asientos_zona_id ON asientos (zona_id); 
+CREATE INDEX idx_asientos_estado ON asientos (estado); 
 
-CREATE UNIQUE INDEX uix_asientos_zona_fila_numero ON asientos (zona_id, fila, numero_asiento);
+CREATE UNIQUE INDEX uix_asientos_zona_fila_numero ON asientos (zona_id, fila, numero_asiento); 
 
-CREATE INDEX idx_carritos_usuario_id ON carritos (usuario_id);
+CREATE INDEX idx_carritos_usuario_id ON carritos (usuario_id); 
 CREATE INDEX idx_carritos_asiento_id ON carritos (asiento_id);
 
-CREATE INDEX idx_compras_usuario_id ON compras (usuario_id);
-CREATE INDEX idx_compras_evento_id ON compras (evento_id);
+CREATE INDEX idx_compras_usuario_id ON compras (usuario_id); 
+CREATE INDEX idx_compras_evento_id ON compras (evento_id);   
 CREATE INDEX idx_logs_usuario_id ON logs_transacciones (usuario_id);

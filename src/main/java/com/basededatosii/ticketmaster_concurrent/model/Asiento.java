@@ -33,7 +33,7 @@ public class Asiento {
     private String numeroAsiento;
 
     @Column(nullable = false, length = 20)
-    private String estado; // 'DISPONIBLE', 'OCUPADO', 'VENDIDO'
+    private String estado;
 
     @Version
     private Integer version;

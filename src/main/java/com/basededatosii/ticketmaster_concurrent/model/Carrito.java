@@ -40,7 +40,6 @@ public class Carrito {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    // Método útil para asignar fecha automáticamente antes de guardar
     @PrePersist
     public void prePersist() {
         if (this.fechaCreacion == null) {

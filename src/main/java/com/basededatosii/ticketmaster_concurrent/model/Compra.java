@@ -1,10 +1,22 @@
 package com.basededatosii.ticketmaster_concurrent.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Data
 @Entity
@@ -30,7 +42,7 @@ public class Compra {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    // Si guardas una Compra, se guardan automáticamente sus Entradas (Cascade)
+    // Al guardar la Compra, se guardan sus entradas en cascada
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Entrada> entradas;
 
