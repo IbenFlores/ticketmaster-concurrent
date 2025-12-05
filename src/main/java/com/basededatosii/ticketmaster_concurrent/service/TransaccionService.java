@@ -4,7 +4,7 @@ public interface TransaccionService {
 
     boolean bloquearAsientoYCrearCompra(Long usuarioId, Long asientoId);
 
-    boolean finalizarCompraYVenderAsientos(Long usuarioId, Long eventoId);
+    boolean finalizarCompraGlobal(Long usuarioId);
 
     boolean liberarAsientosExpirados();
 }

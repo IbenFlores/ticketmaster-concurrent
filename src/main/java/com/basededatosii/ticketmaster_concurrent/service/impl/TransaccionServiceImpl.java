@@ -1,7 +1,6 @@
 package com.basededatosii.ticketmaster_concurrent.service.impl;
 
 import org.springframework.stereotype.Service;
-
 import com.basededatosii.ticketmaster_concurrent.repository.TransaccionRepository;
 import com.basededatosii.ticketmaster_concurrent.service.TransaccionService;
 
@@ -21,8 +20,8 @@ public class TransaccionServiceImpl implements TransaccionService {
     }
 
     @Override
-    public boolean finalizarCompraYVenderAsientos(Long usuarioId, Long eventoId) {
-        int filas = transaccionRepository.finalizarCompraYVenderAsientos(usuarioId, eventoId);
+    public boolean finalizarCompraGlobal(Long usuarioId) {
+        int filas = transaccionRepository.finalizarCompraGlobal(usuarioId);
         return filas > 0;
     }
 

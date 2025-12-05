@@ -21,6 +21,7 @@ public class EntradaController {
         this.entradaService = entradaService;
     }
 
+    // GET /api/entradas/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Entrada> obtenerEntrada(@PathVariable Long id) {
         try {
@@ -30,6 +31,7 @@ public class EntradaController {
         }
     }
 
+    // GET /api/entradas/compra/{compraId}
     @GetMapping("/compra/{compraId}")
     public ResponseEntity<List<Entrada>> listarEntradasPorCompra(@PathVariable Long compraId) {
         return ResponseEntity.ok(entradaService.listarEntradasPorCompra(compraId));

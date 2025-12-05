@@ -1,5 +1,13 @@
 package com.basededatosii.ticketmaster_concurrent.service.impl;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+import org.hibernate.Hibernate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.basededatosii.ticketmaster_concurrent.model.Asiento;
 import com.basededatosii.ticketmaster_concurrent.model.Carrito;
 import com.basededatosii.ticketmaster_concurrent.model.Usuario;
@@ -7,12 +15,6 @@ import com.basededatosii.ticketmaster_concurrent.repository.AsientoRepository;
 import com.basededatosii.ticketmaster_concurrent.repository.CarritoRepository;
 import com.basededatosii.ticketmaster_concurrent.repository.UsuarioRepository;
 import com.basededatosii.ticketmaster_concurrent.service.CarritoService;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 public class CarritoServiceImpl implements CarritoService {
@@ -30,9 +32,24 @@ public class CarritoServiceImpl implements CarritoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<Carrito> obtenerCarritoPorUsuario(Long usuarioId) {
+        List<Carrito> items = carritoRepository.findByUsuario_UsuarioId(usuarioId);
+        
+        items.forEach(c -> {
+            Hibernate.initialize(c.getAsiento());
+            Hibernate.initialize(c.getAsiento().getZona());
+            Hibernate.initialize(c.getAsiento().getZona().getEvento());
+        });
+        
+        return items;
+    }
+
+    @Override
     @Transactional(isolation = Isolation.SERIALIZABLE) 
     public Carrito agregarItem(Long usuarioId, Long asientoId) {
         
+        // Validaciones básicas
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -47,23 +64,20 @@ public class CarritoServiceImpl implements CarritoService {
             throw new RuntimeException("El asiento ya está reservado en otro carrito.");
         }
 
+        // Crear Item
         Carrito item = new Carrito();
         item.setUsuario(usuario);
         item.setAsiento(asiento);
         
-        // Precio temporal fijo ya que Zona no tiene precio
-        item.setPrecio(new BigDecimal("100.00")); 
+        // Usamos el precio real del asiento (actualizado según tu esquema V1)
+        BigDecimal precioAsiento = asiento.getPrecio() != null ? asiento.getPrecio() : new BigDecimal("100.00");
+        item.setPrecio(precioAsiento);
 
+        // Bloquear Asiento (Esta es la lógica Java simple, útil si no usas el TransaccionService)
         asiento.setEstado("RESERVADO");
         asientoRepository.save(asiento);
 
         return carritoRepository.save(item);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Carrito> obtenerCarritoPorUsuario(Long usuarioId) {
-        return carritoRepository.findByUsuario_UsuarioId(usuarioId);
     }
 
     @Override
@@ -72,8 +86,12 @@ public class CarritoServiceImpl implements CarritoService {
         Carrito item = carritoRepository.findByUsuario_UsuarioIdAndAsiento_AsientoId(usuarioId, asientoId)
                 .orElseThrow(() -> new RuntimeException("Item no encontrado en el carrito"));
         
+        // Liberar el asiento y limpiar datos de bloqueo
         Asiento asiento = item.getAsiento();
         asiento.setEstado("DISPONIBLE");
+        asiento.setUsuarioBloqueoId(null);
+        asiento.setFechaBloqueo(null);
+        
         asientoRepository.save(asiento);
         
         carritoRepository.delete(item);
@@ -83,11 +101,16 @@ public class CarritoServiceImpl implements CarritoService {
     @Transactional
     public void vaciarCarrito(Long usuarioId) {
         List<Carrito> items = carritoRepository.findByUsuario_UsuarioId(usuarioId);
+        
+        // Liberar todos los asientos del carrito
         for (Carrito item : items) {
             Asiento asiento = item.getAsiento();
             asiento.setEstado("DISPONIBLE");
+            asiento.setUsuarioBloqueoId(null);
+            asiento.setFechaBloqueo(null);
             asientoRepository.save(asiento);
         }
+        
         carritoRepository.deleteByUsuario_UsuarioId(usuarioId);
     }
 }

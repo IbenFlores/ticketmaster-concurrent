@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +23,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "compras")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Compra {
 
     @Id
@@ -42,14 +45,20 @@ public class Compra {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    // Al guardar la Compra, se guardan sus entradas en cascada
+    @Column(length = 20)
+    private String estado; 
+
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("compra") 
     private List<Entrada> entradas;
 
     @PrePersist
     public void prePersist() {
         if (this.fechaCreacion == null) {
             this.fechaCreacion = LocalDateTime.now();
+        }
+        if (this.estado == null) {
+            this.estado = "COMPLETADA"; 
         }
     }
 }

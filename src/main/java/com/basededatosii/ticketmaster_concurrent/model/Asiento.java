@@ -1,5 +1,8 @@
 package com.basededatosii.ticketmaster_concurrent.model;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -36,16 +39,17 @@ public class Asiento {
     private String numeroAsiento;
 
     @Column(nullable = false, length = 20)
-    private String estado; 
+    private String estado; // 'DISPONIBLE', 'BLOQUEADO', 'VENDIDO'
+    
+    @Column(name = "usuario_bloqueo_id")
+    private Long usuarioBloqueoId; 
+
+    @Column(name = "fecha_bloqueo")
+    private LocalDateTime fechaBloqueo;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal precio; 
 
     @Version
     private Integer version;
-
-    public String getEstado() {
-        return this.estado;
-    }
-    
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
 }

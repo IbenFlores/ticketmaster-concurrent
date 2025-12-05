@@ -23,11 +23,13 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    // POST /api/usuarios
     @PostMapping
     public ResponseEntity<Usuario> crearUsuario(@RequestBody Usuario usuario) {
         return ResponseEntity.ok(usuarioService.crearUsuario(usuario));
     }
 
+    // GET /api/usuarios/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> obtenerUsuario(@PathVariable Long id) {
         try {
@@ -37,6 +39,7 @@ public class UsuarioController {
         }
     }
 
+    // GET /api/usuarios
     @GetMapping
     public ResponseEntity<List<Usuario>> listarUsuarios() {
         return ResponseEntity.ok(usuarioService.listarUsuarios());

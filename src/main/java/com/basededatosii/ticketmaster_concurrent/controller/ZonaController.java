@@ -23,11 +23,13 @@ public class ZonaController {
         this.zonaService = zonaService;
     }
 
+    // POST /api/zonas
     @PostMapping
     public ResponseEntity<Zona> crearZona(@RequestBody Zona zona) {
         return ResponseEntity.ok(zonaService.crearZona(zona));
     }
 
+    // GET /api/zonas/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Zona> obtenerZona(@PathVariable Long id) {
         try {
@@ -37,6 +39,7 @@ public class ZonaController {
         }
     }
 
+    // GET /api/zonas/evento/{eventoId}
     @GetMapping("/evento/{eventoId}")
     public ResponseEntity<List<Zona>> listarZonasPorEvento(@PathVariable Long eventoId) {
         try {

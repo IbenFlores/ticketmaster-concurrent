@@ -1,15 +1,17 @@
 package com.basededatosii.ticketmaster_concurrent.repository;
 
-import com.basededatosii.ticketmaster_concurrent.model.Compra;
-import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.basededatosii.ticketmaster_concurrent.model.Compra;
+
 @Repository
 public interface TransaccionRepository extends JpaRepository<Compra, Long> {
 
-    // 1) Bloquear asiento y crear compra PENDIENTE
     @Modifying
     @Transactional
     @Query(
@@ -26,14 +28,25 @@ public interface TransaccionRepository extends JpaRepository<Compra, Long> {
                     AND a.usuario_bloqueo_id IS NULL
                 RETURNING 
                     a.asiento_id,
+                    a.precio,
                     :usuarioId AS usuario_id
+            ),
+            insertar_carrito AS (
+                INSERT INTO carritos (usuario_id, asiento_id, precio, fecha_creacion)
+                SELECT 
+                    ab.usuario_id, 
+                    ab.asiento_id, 
+                    ab.precio, 
+                    NOW()
+                FROM asiento_bloqueado ab
+                RETURNING carrito_id
             ),
             nueva_compra AS (
                 INSERT INTO compras (usuario_id, evento_id, monto_total, estado)
                 SELECT
                     ab.usuario_id,
                     z.evento_id,
-                    a.precio AS monto_total,
+                    ab.precio AS monto_total,
                     'PENDIENTE' AS estado
                 FROM asiento_bloqueado ab
                 JOIN asientos a ON a.asiento_id = ab.asiento_id
@@ -42,16 +55,16 @@ public interface TransaccionRepository extends JpaRepository<Compra, Long> {
             )
             INSERT INTO logs_transacciones (usuario_id, accion, asiento_id, compra_id, detalles)
             SELECT
-                :usuarioId AS usuario_id,
+                :usuarioId,
                 CASE 
                     WHEN EXISTS (SELECT 1 FROM asiento_bloqueado)
                         THEN 'BLOQUEO_EXITOSO'
                     ELSE 'BLOQUEO_FALLIDO'
-                END AS accion,
-                :asientoId AS asiento_id,
+                END,
+                :asientoId,
                 nc.compra_id,
-                'Intento de bloqueo para agregar al carrito.' AS detalles
-            FROM (SELECT :usuarioId AS usuario_id, :asientoId AS asiento_id) p
+                'Asiento bloqueado y agregado al carrito.'
+            FROM (SELECT :usuarioId AS usuario_id) p
             LEFT JOIN nueva_compra nc ON nc.usuario_id = p.usuario_id
             """,
         nativeQuery = true
@@ -61,73 +74,75 @@ public interface TransaccionRepository extends JpaRepository<Compra, Long> {
             @Param("asientoId") Long asientoId
     );
 
-    // 2) Finalizar compra y vender asientos
     @Modifying
     @Transactional
     @Query(
         value = """
-            WITH compra_pendiente AS (
+            WITH asientos_a_comprar AS (
+                SELECT asiento_id, precio
+                FROM asientos
+                WHERE usuario_bloqueo_id = :usuarioId
+                  AND estado = 'BLOQUEADO'
+            ),
+            compra_maestra AS (
                 SELECT compra_id
                 FROM compras
                 WHERE usuario_id = :usuarioId
-                  AND evento_id  = :eventoId
-                  AND estado     = 'PENDIENTE'
+                  AND estado = 'PENDIENTE'
                 ORDER BY fecha_creacion DESC
                 LIMIT 1
             ),
-            compra_actualizada AS (
+            total_calculado AS (
+                SELECT SUM(precio) as total FROM asientos_a_comprar
+            ),
+            actualizar_compra AS (
                 UPDATE compras c
-                SET estado = 'COMPLETADA'
-                FROM compra_pendiente cp
-                WHERE c.compra_id = cp.compra_id
+                SET 
+                    estado = 'COMPLETADA',
+                    monto_total = (SELECT total FROM total_calculado),
+                    fecha_creacion = NOW()
+                WHERE c.compra_id = (SELECT compra_id FROM compra_maestra)
                 RETURNING c.compra_id
             ),
-            entradas_insertadas AS (
+            crear_entradas AS (
                 INSERT INTO entradas (asiento_id, compra_id, precio)
                 SELECT
-                    a.asiento_id,
-                    ca.compra_id,
-                    a.precio
-                FROM asientos a
-                JOIN zonas z ON z.zona_id = a.zona_id
-                JOIN compra_actualizada ca ON z.evento_id = :eventoId
-                WHERE
-                    a.usuario_bloqueo_id = :usuarioId
-                    AND a.estado = 'BLOQUEADO'
-                RETURNING asiento_id, compra_id
+                    ac.asiento_id,
+                    (SELECT compra_id FROM actualizar_compra),
+                    ac.precio
+                FROM asientos_a_comprar ac
+                RETURNING entrada_id
             ),
-            logs_insertados AS (
-                INSERT INTO logs_transacciones (usuario_id, accion, asiento_id, compra_id, detalles)
+            limpiar_carrito AS (
+                DELETE FROM carritos 
+                WHERE usuario_id = :usuarioId
+            ),
+            limpiar_compras_pendientes_sobrantes AS (
+                DELETE FROM compras
+                WHERE usuario_id = :usuarioId
+                  AND estado = 'PENDIENTE'
+                  AND compra_id != (SELECT compra_id FROM compra_maestra)
+            ),
+            registrar_log AS (
+                INSERT INTO logs_transacciones (usuario_id, accion, compra_id, detalles)
                 SELECT
                     :usuarioId,
                     'COMPRA_EXITOSA',
-                    e.asiento_id,
-                    e.compra_id,
-                    'Compra finalizada. Asiento vendido y entrada generada.'
-                FROM entradas_insertadas e
-                RETURNING asiento_id
+                    (SELECT compra_id FROM actualizar_compra),
+                    'Checkout global completado. Entradas generadas.'
+                WHERE EXISTS (SELECT 1 FROM actualizar_compra)
             )
             UPDATE asientos a
             SET
                 estado = 'VENDIDO',
                 usuario_bloqueo_id = NULL,
                 fecha_bloqueo = NULL
-            FROM zonas z
-            WHERE 
-                a.zona_id = z.zona_id
-                AND a.usuario_bloqueo_id = :usuarioId
-                AND a.estado = 'BLOQUEADO'
-                AND z.evento_id = :eventoId
-                AND EXISTS (SELECT 1 FROM compra_actualizada);
+            WHERE a.asiento_id IN (SELECT asiento_id FROM asientos_a_comprar);
             """,
         nativeQuery = true
     )
-    int finalizarCompraYVenderAsientos(
-            @Param("usuarioId") Long usuarioId,
-            @Param("eventoId") Long eventoId
-    );
+    int finalizarCompraGlobal(@Param("usuarioId") Long usuarioId);
 
-    // 3) Liberar asientos expirados
     @Modifying
     @Transactional
     @Query(
@@ -144,13 +159,17 @@ public interface TransaccionRepository extends JpaRepository<Compra, Long> {
                     AND fecha_bloqueo IS NOT NULL
                     AND fecha_bloqueo < NOW() - INTERVAL '15 minutes'
                 RETURNING usuario_bloqueo_id, asiento_id
+            ),
+            limpiar_carritos_expirados AS (
+                DELETE FROM carritos
+                WHERE asiento_id IN (SELECT asiento_id FROM asientos_liberados)
             )
             INSERT INTO logs_transacciones (usuario_id, accion, asiento_id, detalles)
             SELECT
                 usuario_bloqueo_id,
                 'TIMEOUT_LIBERADO',
                 asiento_id,
-                'Asiento liberado automáticamente. Timeout de 15 minutos expirado.'
+                'Asiento liberado automáticamente. Timeout expirado.'
             FROM asientos_liberados;
             """,
         nativeQuery = true

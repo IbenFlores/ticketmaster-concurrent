@@ -1,8 +1,13 @@
 package com.basededatosii.ticketmaster_concurrent.controller;
 
-import com.basededatosii.ticketmaster_concurrent.service.TransaccionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.basededatosii.ticketmaster_concurrent.service.TransaccionService;
 
 @RestController
 @RequestMapping("/transacciones")
@@ -14,7 +19,7 @@ public class TransaccionController {
         this.transaccionService = transaccionService;
     }
 
-    // POST /transacciones/bloquear-asiento/1?usuarioId=1
+    // POST /transacciones/bloquear-asiento/{asientoId}?usuarioId=1
     @PostMapping("/bloquear-asiento/{asientoId}")
     public ResponseEntity<?> bloquearAsiento(
             @PathVariable Long asientoId,
@@ -23,39 +28,37 @@ public class TransaccionController {
         boolean exito = transaccionService.bloquearAsientoYCrearCompra(usuarioId, asientoId);
 
         if (exito) {
-            return ResponseEntity.ok("Asiento bloqueado y compra PENDIENTE creada.");
+            return ResponseEntity.ok("Asiento bloqueado y agregado al carrito exitosamente.");
         } else {
             return ResponseEntity.badRequest()
-                    .body("No se pudo bloquear el asiento (ya está vendido o bloqueado).");
+                    .body("No se pudo bloquear el asiento (ya está vendido, bloqueado o no existe).");
         }
     }
 
-    // POST /transacciones/finalizar-compra?usuarioId=1&eventoId=1
+    // POST /transacciones/finalizar-compra?usuarioId=1
     @PostMapping("/finalizar-compra")
     public ResponseEntity<?> finalizarCompra(
-            @RequestParam Long usuarioId,
-            @RequestParam Long eventoId
+            @RequestParam Long usuarioId
     ) {
-        boolean exito = transaccionService.finalizarCompraYVenderAsientos(usuarioId, eventoId);
+        boolean exito = transaccionService.finalizarCompraGlobal(usuarioId);
 
         if (exito) {
-            return ResponseEntity.ok("Compra finalizada, entradas generadas y asientos marcados como VENDIDO.");
+            return ResponseEntity.ok("Compra global finalizada correctamente. Entradas generadas.");
         } else {
             return ResponseEntity.badRequest()
-                    .body("No se encontró compra PENDIENTE para ese usuario y evento.");
+                    .body("No se encontraron asientos bloqueados en el carrito para procesar.");
         }
     }
 
-        // POST /transacciones/liberar-expirados
+    // POST /transacciones/liberar-expirados
     @PostMapping("/liberar-expirados")
     public ResponseEntity<?> liberarExpirados() {
         boolean exito = transaccionService.liberarAsientosExpirados();
 
         if (exito) {
-            return ResponseEntity.ok("Asientos expirados liberados correctamente.");
+            return ResponseEntity.ok("Se liberaron los asientos expirados.");
         } else {
             return ResponseEntity.ok("No había asientos expirados para liberar.");
         }
     }
-
 }

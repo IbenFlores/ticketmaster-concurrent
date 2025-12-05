@@ -1,8 +1,10 @@
 package com.basededatosii.ticketmaster_concurrent.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,14 +21,9 @@ public class CompraController {
         this.compraService = compraService;
     }
 
-    // POST http://localhost:8080/api/compras/checkout/{usuarioId}
-    @PostMapping("/checkout/{usuarioId}")
-    public ResponseEntity<?> realizarCheckout(@PathVariable Long usuarioId) {
-        try {
-            Compra compra = compraService.realizarCompra(usuarioId);
-            return ResponseEntity.ok(compra);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    // GET /api/compras/usuario/{usuarioId}
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<Compra>> listarHistorial(@PathVariable Long usuarioId) {
+        return ResponseEntity.ok(compraService.listarComprasPorUsuario(usuarioId));
     }
 }

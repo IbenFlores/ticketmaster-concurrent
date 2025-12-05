@@ -22,11 +22,13 @@ public class EventoController {
         this.eventoService = eventoService;
     }
 
+    // GET /api/eventos
     @GetMapping
     public ResponseEntity<List<Evento>> listarEventos() {
         return ResponseEntity.ok(eventoService.obtenerTodosLosEventos());
     }
 
+    // GET /api/eventos/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Evento> obtenerEvento(@PathVariable Long id) {
         try {
@@ -36,6 +38,7 @@ public class EventoController {
         }
     }
     
+    // POST /api/eventos
     @PostMapping
     public ResponseEntity<Evento> crearEvento(@RequestBody Evento evento) {
         return ResponseEntity.ok(eventoService.crearEvento(evento));

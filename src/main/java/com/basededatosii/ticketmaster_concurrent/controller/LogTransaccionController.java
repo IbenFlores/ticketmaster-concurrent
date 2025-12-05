@@ -21,13 +21,13 @@ public class LogTransaccionController {
         this.logService = logService;
     }
 
-    // GET http://localhost:8080/api/logs
+    // GET /api/logs
     @GetMapping
     public ResponseEntity<List<LogTransaccion>> verTodosLosLogs() {
         return ResponseEntity.ok(logService.obtenerTodosLosLogs());
     }
 
-    // GET http://localhost:8080/api/logs/usuario/{id}
+    // GET /api/logs/usuario/{id}
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<LogTransaccion>> verLogsDeUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(logService.obtenerLogsPorUsuario(usuarioId));

@@ -24,11 +24,13 @@ public class AsientoController {
         this.asientoService = asientoService;
     }
 
+    // POST /api/asientos
     @PostMapping
     public ResponseEntity<Asiento> crearAsiento(@RequestBody Asiento asiento) {
         return ResponseEntity.ok(asientoService.crearAsiento(asiento));
     }
 
+    // GET /api/asientos/{id}
     @GetMapping("/{id}")
     public ResponseEntity<Asiento> obtenerAsiento(@PathVariable Long id) {
         try {
@@ -38,14 +40,15 @@ public class AsientoController {
         }
     }
 
+    // GET /api/asientos/zona/{zonaId}
     @GetMapping("/zona/{zonaId}")
     public ResponseEntity<List<Asiento>> listarAsientosPorZona(@PathVariable Long zonaId) {
         return ResponseEntity.ok(asientoService.obtenerAsientosPorZona(zonaId));
     }
 
-     @GetMapping("/disponibles")
+    // GET /api/asientos/disponibles
+    @GetMapping("/disponibles")
     public ResponseEntity<List<AsientoDisponibleView>> listarDisponibles() {
-        List<AsientoDisponibleView> asientos = asientoService.obtenerAsientosDisponibles();
-        return ResponseEntity.ok(asientos);
+        return ResponseEntity.ok(asientoService.obtenerAsientosDisponibles());
     }
 }
