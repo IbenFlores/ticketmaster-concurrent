@@ -49,7 +49,6 @@ public class CarritoServiceImpl implements CarritoService {
     @Transactional(isolation = Isolation.SERIALIZABLE) 
     public Carrito agregarItem(Long usuarioId, Long asientoId) {
         
-        // Validaciones básicas
         Usuario usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -64,16 +63,13 @@ public class CarritoServiceImpl implements CarritoService {
             throw new RuntimeException("El asiento ya está reservado en otro carrito.");
         }
 
-        // Crear Item
         Carrito item = new Carrito();
         item.setUsuario(usuario);
         item.setAsiento(asiento);
         
-        // Usamos el precio real del asiento (actualizado según tu esquema V1)
         BigDecimal precioAsiento = asiento.getPrecio() != null ? asiento.getPrecio() : new BigDecimal("100.00");
         item.setPrecio(precioAsiento);
 
-        // Bloquear Asiento (Esta es la lógica Java simple, útil si no usas el TransaccionService)
         asiento.setEstado("RESERVADO");
         asientoRepository.save(asiento);
 
@@ -86,7 +82,6 @@ public class CarritoServiceImpl implements CarritoService {
         Carrito item = carritoRepository.findByUsuario_UsuarioIdAndAsiento_AsientoId(usuarioId, asientoId)
                 .orElseThrow(() -> new RuntimeException("Item no encontrado en el carrito"));
         
-        // Liberar el asiento y limpiar datos de bloqueo
         Asiento asiento = item.getAsiento();
         asiento.setEstado("DISPONIBLE");
         asiento.setUsuarioBloqueoId(null);
@@ -102,7 +97,6 @@ public class CarritoServiceImpl implements CarritoService {
     public void vaciarCarrito(Long usuarioId) {
         List<Carrito> items = carritoRepository.findByUsuario_UsuarioId(usuarioId);
         
-        // Liberar todos los asientos del carrito
         for (Carrito item : items) {
             Asiento asiento = item.getAsiento();
             asiento.setEstado("DISPONIBLE");

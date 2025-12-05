@@ -21,7 +21,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public Usuario crearUsuario(Usuario usuario) {
-        // En un caso real aquí se encriptaría la contraseña
         return usuarioRepository.save(usuario);
     }
 

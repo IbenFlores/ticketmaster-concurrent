@@ -24,8 +24,6 @@ public class LogTransaccionServiceImpl implements LogTransaccionService {
     }
 
     @Override
-    // REQUIRES_NEW asegura que el log se intente guardar en una transacción nueva,
-    // útil si quieres guardar errores incluso si la transacción principal falla.
     @Transactional(propagation = Propagation.REQUIRES_NEW) 
     public void registrarLog(String accion, Long usuarioId, Long asientoId, Long compraId, String detalles) {
         LogTransaccion log = new LogTransaccion();

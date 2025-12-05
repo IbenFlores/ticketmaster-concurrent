@@ -35,7 +35,7 @@ CREATE TABLE asientos (
     estado VARCHAR(20) NOT NULL DEFAULT 'DISPONIBLE',
     usuario_bloqueo_id BIGINT REFERENCES usuarios(usuario_id), 
     fecha_bloqueo TIMESTAMP, 
-    version INT DEFAULT 0, -- CAMBIO: Agregado campo version para @Version de JPA
+    version INT DEFAULT 0,
     UNIQUE (zona_id, fila, numero_asiento)
 );
 
